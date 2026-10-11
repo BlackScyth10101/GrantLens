@@ -1,0 +1,99 @@
+/**
+ * =============================================================================
+ * GrantLens Frontend - Global Stylesheet (src/index.css)
+ * =============================================================================
+ * Project: GrantLens - AI Grant Auditing & Evaluation Platform
+ * Scope: Week 1 Milestone - Base Resets, Tailwind Directives & Glassmorphism
+ * =============================================================================
+ */
+
+/* 1. TAILWIND DIRECTIVES:
+ * @tailwind base: Injects Preflight (modern CSS reset based on modern-normalize).
+ * @tailwind components: Injects component classes registered by plugins.
+ * @tailwind utilities: Injects generated utility classes (flex, p-4, bg-navy-950).
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 2. BASE LAYER OVERRIDES:
+ * Customizes fundamental HTML elements before utilities are applied.
+ */
+@layer base {
+  /* Default border color across all containers to match navy palette */
+  * {
+    border-color: #1E2D4A;
+  }
+  
+  /* Forces browser to use dark system controls (scrollbars, form inputs) */
+  html {
+    color-scheme: dark;
+  }
+
+  /* Body defaults: dark background, light text, selection highlight */
+  body {
+    @apply bg-navy-950 text-slate-100 antialiased selection:bg-brand-500 selection:text-white;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* #root div: Must expand to full width and minimum viewport height */
+  #root {
+    width: 100%;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+  }
+}
+
+/* 3. GLASSMORPHISM UTILITY CLASSES:
+ * Uses backdrop-filter: blur() to create frosted-glass aesthetic.
+ */
+.glass-panel {
+  background: rgba(15, 22, 38, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(42, 63, 102, 0.5);
+}
+
+.glass-card {
+  background: rgba(20, 30, 52, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(42, 63, 102, 0.45);
+}
+
+.glass-card-hover {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card-hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(249, 115, 22, 0.4);
+  box-shadow: 0 12px 30px -10px rgba(249, 115, 22, 0.15);
+}
+
+/* Subtle radial lighting gradients */
+.radial-brand-gradient {
+  background: radial-gradient(circle at 50% 0%, rgba(249, 115, 22, 0.15) 0%, rgba(11, 15, 25, 0) 70%);
+}
+
+.radial-spotlight {
+  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(249, 115, 22, 0.08), transparent 40%);
+}
+
+/* 4. CUSTOM DARK SCROLLBAR: */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #070A12;
+}
+::-webkit-scrollbar-thumb {
+  background: #1E2D4A;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #F97316;
+}

@@ -1,0 +1,36 @@
+# Python / Django
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+.env
+.venv
+venv/
+env/
+*.sqlite3
+
+# Node / React / Vite
+node_modules/
+dist/
+.vite/
+*.local
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
+
+# Python scripts used to generate PDFs/PPTX (optional — remove if you want them)
+# generate_*.py
+# *.pdf
+# *.pptx

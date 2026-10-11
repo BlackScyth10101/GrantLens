@@ -1,0 +1,41 @@
+<!doctype html>
+<!--
+=============================================================================
+GrantLens Frontend - Root HTML5 Shell (index.html)
+=============================================================================
+Project: GrantLens - AI Grant Auditing & Evaluation Platform
+Scope: Week 1 Milestone - Single Page Application (SPA) HTML Container
+=============================================================================
+-->
+<html lang="en" class="dark scroll-smooth">
+  <head>
+    <!-- Character encoding for standard UTF-8 text rendering -->
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    
+    <!-- Responsive Viewport: Ensures 1:1 scaling across mobile & desktop devices -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- SEO and Academic Project Meta Description -->
+    <meta name="description" content="GrantLens: Automated Pre-Submission Compliance & Evaluation Platform for Federal Research Grants (NSF, NIH, DOE, DARPA)." />
+    <title>GrantLens | AI Grant Auditing & Evaluation Platform</title>
+
+    <!-- Google Fonts Optimization: Preconnect establishes early TCP handshakes to Google's font servers -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Imports Inter (clean UI text), Plus Jakarta Sans (headings), and JetBrains Mono (audit rule codes) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-[#070A12] text-slate-100 min-h-screen selection:bg-orange-500 selection:text-white font-sans antialiased">
+    
+    <!-- THE MOUNT CONTAINER:
+         React's ReactDOM.createRoot() targets this specific div to inject
+         the entire Virtual DOM tree. React does not touch anything outside this container. -->
+    <div id="root"></div>
+
+    <!-- NATIVE ES MODULE SCRIPT:
+         Vite utilizes browser-native ES module loading. The browser requests /src/main.jsx
+         directly over HTTP without requiring an upfront bundle file during development. -->
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
