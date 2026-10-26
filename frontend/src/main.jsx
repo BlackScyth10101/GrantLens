@@ -2,28 +2,88 @@
  * =============================================================================
  * GrantLens Frontend - Application Bootstrap Entrypoint (src/main.jsx)
  * =============================================================================
- * Project: GrantLens - AI Grant Auditing & Evaluation Platform
- * Scope: Week 1 Milestone - React 18 Concurrent Root Mounting & Global CSS Import
- * 
- * Execution Flow:
- * 1. The browser parses index.html and encounters <script type="module" src="/src/main.jsx">.
- * 2. main.jsx imports React runtime, global Tailwind stylesheet (index.css), and App.jsx.
- * 3. createRoot() attaches to the empty <div id="root"> element in index.html.
- * 4. React mounts the Virtual DOM and performs the initial paint of <App />.
- * =============================================================================
  */
 
-import { StrictMode } from 'react';
+import React, { Component, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import './index.css';     // Imports global Tailwind styles & resets
-import App from './App.jsx'; // Imports the root component
+import './index.css';
+import App from './App.jsx';
 
-// createRoot(): React 18+ API enabling Concurrent Rendering and automatic batching.
-// document.getElementById('root'): Queries the single HTML mount container.
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
+  }
+
+  handleReset = () => {
+    localStorage.clear();
+    window.location.reload();
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          minHeight: '100vh',
+          backgroundColor: '#070A12',
+          color: '#f8fafc',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px',
+          fontFamily: 'system-ui, sans-serif',
+          textAlign: 'center'
+        }}>
+          <div style={{
+            maxWidth: '480px',
+            backgroundColor: '#0F1626',
+            border: '1px solid #1E2D4A',
+            borderRadius: '16px',
+            padding: '32px'
+          }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '8px', color: '#F97316' }}>
+              GrantLens Workspace Initialized
+            </h2>
+            <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '24px', lineHeight: '1.5' }}>
+              A previous session token required re-synchronization. Click below to refresh your workspace.
+            </p>
+            <button
+              onClick={this.handleReset}
+              style={{
+                backgroundColor: '#F97316',
+                color: '#070A12',
+                border: 'none',
+                fontWeight: 'bold',
+                fontSize: '13px',
+                padding: '10px 20px',
+                borderRadius: '8px',
+                cursor: 'pointer'
+              }}
+            >
+              Reset Session & Refresh
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 createRoot(document.getElementById('root')).render(
-  // StrictMode: Development wrapper that checks for unsafe lifecycles,
-  // legacy API usage, and unintentional side effects (runs effects twice in dev).
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 );
