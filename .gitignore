@@ -12,6 +12,9 @@ build/
 venv/
 env/
 *.sqlite3
+*.db
+storage/
+backend/storage/
 
 # Node / React / Vite
 node_modules/

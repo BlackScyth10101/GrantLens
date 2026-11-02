@@ -1,18 +1,43 @@
+# ==============================================================================
+# GrantLens Compliance & Audit Engine - Backend Dependencies
+# ==============================================================================
+# Project: GrantLens (CSE299 Section 3, Group 2)
+# Milestone: Week 3 - Gemini AI API Integration & Full-Stack Portal
+# ==============================================================================
+
+# Core Asynchronous REST API Web Framework
 fastapi==0.143.0
 uvicorn[standard]==0.54.0
+
+# Data Serialization, Validation & Settings Management
 pydantic==2.14.1
 email-validator>=2.0.0
 pydantic-settings==2.2.1
+
+# Relational ORM & Asynchronous Database Drivers
 sqlalchemy==2.1.4
 greenlet>=3.0.0
-asyncpg==0.32.0
-aiosqlite==0.22.1
+asyncpg==0.32.0          # PostgreSQL async driver (Production)
+aiosqlite==0.22.1        # SQLite async driver (Local development fallback)
 alembic==1.13.1
-PyMuPDF==1.28.2
-pdfplumber==0.11.10
-python-multipart==0.0.32
+
+# Document Ingestion, PDF Layout Geometry & Tabular Budget Parsing
+PyMuPDF==1.28.2          # Sub-millimeter font size, margin, and text extraction
+pdfplumber==0.11.10      # Financial table row extraction and budget reconciliation
+python-multipart==0.0.32 # Multipart form-data parser for dual PDF upload
+
+# Cryptography, Authentication & Token Security
 passlib[bcrypt]==1.7.4
 bcrypt==5.0.0
 pyjwt==2.15.1
-python-dotenv==1.2.4
 cryptography>=42.0.0
+python-dotenv==1.2.4
+
+# ==============================================================================
+# Week 3 Milestone: Google Gemini GenAI SDK
+# ==============================================================================
+# Official Google GenAI SDK for Gemini 1.5/2.0 Flash and Pro models
+# Enables structured JSON schema outputs, multi-document context ingestion,
+# and high-speed narrative compliance evaluation.
+google-genai>=0.1.1
+httpx>=0.28.1

@@ -1,30 +1,76 @@
+/**
+ * =============================================================================
+ * GrantLens Frontend - Researcher Submission Portal (SubmissionPortal.jsx)
+ * =============================================================================
+ * Project: GrantLens (CSE299 Section 3, Group 2)
+ * Milestone: Week 3 - Dual-Engine Ingestion & Gemini AI Compliance Integration
+ * Author: Hasin Anzum Inan, Anas Ibne Majbha, Tazreen Alam, Israt Jahan Susmi
+ * =============================================================================
+ * This portal serves as the primary workspace for academic researchers:
+ * 1. Dual PDF Ingestion Dropzone:
+ *    - Ingests Agency Solicitation guideline PDF and Draft Proposal manuscript.
+ * 2. Real-Time Heuristic Rule Engine (Week 2):
+ *    - Evaluates sub-millimeter margins, min font sizes, and financial budgets.
+ * 3. [NEW Week 3] Google Gemini 1.5 Flash AI Narrative Review:
+ *    - Mounts GeminiAdvisor.jsx for NSF/NIH peer-review rubrics and side-by-side rewrites.
+ *    - Provides tabbed switching between Layout & Geometry vs. Gemini AI Narrative Review.
+ * 4. Progressive Multi-Step AI Evaluation Loading Indicator:
+ *    - Displays granular progress steps while Gemini synthesizes the panel verdict.
+ * =============================================================================
+ */
+
 import React, { useState } from 'react';
-import { 
-  Upload, 
-  FileText, 
-  CheckCircle2, 
-  AlertTriangle, 
-  XCircle, 
-  ShieldAlert, 
-  DollarSign, 
-  Award, 
-  ArrowRight, 
+import {
+  Upload,
+  FileText,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  ShieldAlert,
+  DollarSign,
+  Award,
+  ArrowRight,
   RotateCcw,
   Sparkles,
   FileCheck,
-  Building
+  Building,
+  Layers,
+  Cpu,
+  RefreshCw,
+  Sliders,
 } from 'lucide-react';
 import { API_BASE } from '../../apiConfig';
+import GeminiAdvisor from './GeminiAdvisor';
 
 export default function SubmissionPortal({ user, token, onSignOut }) {
+  // ---------------------------------------------------------------------------
+  // 1. FORM & INGESTION STATE
+  // ---------------------------------------------------------------------------
   const [title, setTitle] = useState('');
   const [fundingAgency, setFundingAgency] = useState('NSF 24-500 (National Science Foundation)');
   const [solicitationFile, setSolicitationFile] = useState(null);
   const [proposalFile, setProposalFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Results of heuristic rule engine audit (Week 2)
   const [auditResult, setAuditResult] = useState(null);
 
+  // ---------------------------------------------------------------------------
+  // 2. WEEK 3 TAB & GEMINI AI STATE
+  // ---------------------------------------------------------------------------
+  // Active audit tab: 'formatting' (Layout / Heuristic) | 'gemini' (AI Narrative Review)
+  const [activeTab, setActiveTab] = useState('formatting');
+
+  // AI Review results fetched from FastAPI /api/v1/submissions/{id}/ai-audit
+  const [aiReview, setAiReview] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiStep, setAiStep] = useState(1);
+  const [aiError, setAiError] = useState(null);
+
+  // ---------------------------------------------------------------------------
+  // 3. INGESTION SUBMISSION HANDLER
+  // ---------------------------------------------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!solicitationFile || !proposalFile) {
@@ -45,7 +91,7 @@ export default function SubmissionPortal({ user, token, onSignOut }) {
       const response = await fetch(`${API_BASE}/api/v1/submissions/upload`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: formData,
       });
@@ -59,6 +105,8 @@ export default function SubmissionPortal({ user, token, onSignOut }) {
       }
 
       setAuditResult(data);
+      // Default to formatting tab upon initial upload completion
+      setActiveTab('formatting');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -66,23 +114,76 @@ export default function SubmissionPortal({ user, token, onSignOut }) {
     }
   };
 
+  // ---------------------------------------------------------------------------
+  // 4. GEMINI AI AUDIT EXECUTION HANDLER
+  // ---------------------------------------------------------------------------
+  const handleRunAiAudit = async () => {
+    if (!auditResult?.submission_id) return;
+
+    setAiLoading(true);
+    setAiError(null);
+    setAiStep(1);
+
+    // Simulate multi-step progress animation for realistic academic review
+    const t1 = setTimeout(() => setAiStep(2), 700);
+    const t2 = setTimeout(() => setAiStep(3), 1500);
+
+    try {
+      const response = await fetch(
+        `${API_BASE}/api/v1/submissions/${auditResult.submission_id}/ai-audit`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.detail || 'Gemini AI evaluation failed.');
+      }
+
+      setAiReview(data);
+      setActiveTab('gemini');
+    } catch (err) {
+      setAiError(err.message);
+    } finally {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      setAiLoading(false);
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // 5. RESET STATE TO SUBMIT NEW GRANT
+  // ---------------------------------------------------------------------------
   const handleReset = () => {
     setAuditResult(null);
+    setAiReview(null);
     setSolicitationFile(null);
     setProposalFile(null);
     setTitle('');
+    setActiveTab('formatting');
+    setError(null);
+    setAiError(null);
   };
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      {/* Researcher header info bar */}
+      {/* =====================================================================
+          RESEARCHER PROFILE BAR & STATUS BADGE
+          ===================================================================== */}
       <div className="bg-navy-900 border border-navy-800 rounded-2xl p-5 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
           <div className="w-11 h-11 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-brand-400 font-bold text-lg">
             {user?.full_name ? user.full_name[0] : 'R'}
           </div>
           <div>
-            <h2 className="text-white font-semibold text-base">{user?.full_name || 'Authenticated Researcher'}</h2>
+            <h2 className="text-white font-semibold text-base">
+              {user?.full_name || 'Authenticated Researcher'}
+            </h2>
             <p className="text-xs text-slate-400 flex items-center gap-1.5">
               <span>{user?.institution || 'Academic Institution'}</span>
               <span>•</span>
@@ -94,7 +195,7 @@ export default function SubmissionPortal({ user, token, onSignOut }) {
         <div className="flex items-center gap-3">
           <span className="text-xs bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-full font-medium flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            FastAPI Audit Pipeline Active
+            FastAPI Dual-Engine Active
           </span>
           <button
             onClick={onSignOut}
@@ -106,14 +207,18 @@ export default function SubmissionPortal({ user, token, onSignOut }) {
       </div>
 
       {!auditResult ? (
-        /* Upload Form */
+        /* =====================================================================
+            DUAL-DOCUMENT UPLOAD FORM
+            ===================================================================== */
         <div className="bg-navy-900 border border-navy-800 rounded-2xl p-8 backdrop-blur-xl">
           <div className="max-w-2xl mb-8">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs font-semibold uppercase tracking-wider mb-3">
               <Sparkles className="w-3.5 h-3.5" />
               Dual-Document Ingestion Engine
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">Pre-Flight Grant Audit Submission</h1>
+            <h1 className="text-2xl font-bold text-white tracking-tight">
+              Pre-Flight Grant Audit Submission
+            </h1>
             <p className="text-sm text-slate-400 mt-1">
               Upload the agency solicitation PDF and your proposal manuscript. GrantLens evaluates page limits, font geometry, budget line-items, and mandatory sections.
             </p>
@@ -125,7 +230,9 @@ export default function SubmissionPortal({ user, token, onSignOut }) {
                 <XCircle className="w-4 h-4 text-red-400 shrink-0" />
                 <span>{error}</span>
               </div>
-              {(error.toLowerCase().includes('token') || error.toLowerCase().includes('session') || error.toLowerCase().includes('credential')) && (
+              {(error.toLowerCase().includes('token') ||
+                error.toLowerCase().includes('session') ||
+                error.toLowerCase().includes('credential')) && (
                 <button
                   type="button"
                   onClick={onSignOut}
@@ -140,7 +247,9 @@ export default function SubmissionPortal({ user, token, onSignOut }) {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Proposal Working Title</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Proposal Working Title
+                </label>
                 <input
                   type="text"
                   required
@@ -152,13 +261,17 @@ export default function SubmissionPortal({ user, token, onSignOut }) {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Target Funding Agency / Solicitation Call</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Target Funding Agency / Solicitation Call
+                </label>
                 <select
                   value={fundingAgency}
                   onChange={(e) => setFundingAgency(e.target.value)}
                   className="w-full bg-navy-950 border border-navy-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500 transition-colors"
                 >
-                  <option value="NSF 24-500 (National Science Foundation)">NSF 24-500 (National Science Foundation)</option>
+                  <option value="NSF 24-500 (National Science Foundation)">
+                    NSF 24-500 (National Science Foundation)
+                  </option>
                   <option value="NIH R01 Research Project Grant">NIH R01 Research Project Grant</option>
                   <option value="DOE Early Career Research Program">DOE Early Career Research Program</option>
                   <option value="Horizon Europe Pillar II">Horizon Europe Pillar II</option>
@@ -174,7 +287,7 @@ export default function SubmissionPortal({ user, token, onSignOut }) {
                 <FileText className="w-10 h-10 text-cyan-400 mx-auto mb-3" />
                 <h3 className="text-sm font-semibold text-white mb-1">Agency Call / Solicitation PDF</h3>
                 <p className="text-xs text-slate-400 mb-4">Ingests guidelines, format rules, budget caps</p>
-                
+
                 <input
                   type="file"
                   id="solicitationInput"
@@ -195,8 +308,10 @@ export default function SubmissionPortal({ user, token, onSignOut }) {
               <div className="border-2 border-dashed border-navy-750 hover:border-brand-500/50 rounded-2xl p-6 text-center transition-colors bg-navy-950/50">
                 <FileCheck className="w-10 h-10 text-brand-400 mx-auto mb-3" />
                 <h3 className="text-sm font-semibold text-white mb-1">Draft Proposal Manuscript PDF</h3>
-                <p className="text-xs text-slate-400 mb-4">Ingests narrative, layout geometry, tables, and budget sheet</p>
-                
+                <p className="text-xs text-slate-400 mb-4">
+                  Ingests narrative, layout geometry, tables, and budget sheet
+                </p>
+
                 <input
                   type="file"
                   id="proposalInput"
@@ -231,35 +346,47 @@ export default function SubmissionPortal({ user, token, onSignOut }) {
           </form>
         </div>
       ) : (
-        /* Results View */
+        /* =====================================================================
+            AUDIT RESULTS WORKSPACE (WEEK 3 DUAL-ENGINE TABBED VIEW)
+            ===================================================================== */
         <div className="space-y-6">
-          {/* Top banner card */}
+          {/* Top Banner Overview Card */}
           <div className="bg-navy-900 border border-navy-800 rounded-2xl p-6 backdrop-blur-xl">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-navy-800">
               <div>
-                <span className="text-xs font-bold text-brand-400 uppercase tracking-wider">Audit Evaluation Complete</span>
+                <span className="text-xs font-bold text-brand-400 uppercase tracking-wider">
+                  Audit Evaluation Complete
+                </span>
                 <h2 className="text-2xl font-bold text-white mt-1">{auditResult.title}</h2>
                 <p className="text-xs text-slate-400 mt-1">Agency Target: {auditResult.funding_agency}</p>
               </div>
 
               <div className="flex items-center gap-4">
                 <div className="text-right">
-                  <span className="text-xs text-slate-400 block">Compliance Score</span>
-                  <span className={`text-3xl font-extrabold ${auditResult.audit_score >= 80 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  <span className="text-xs text-slate-400 block">Heuristic Score</span>
+                  <span
+                    className={`text-3xl font-extrabold ${
+                      auditResult.audit_score >= 80 ? 'text-emerald-400' : 'text-amber-400'
+                    }`}
+                  >
                     {auditResult.audit_score.toFixed(1)}%
                   </span>
                 </div>
-                <div className={`px-4 py-2 rounded-xl text-xs font-bold border ${
-                  auditResult.institutional_signoff_ready 
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                    : 'bg-red-500/10 border-red-500/30 text-red-400'
-                }`}>
-                  {auditResult.institutional_signoff_ready ? '✓ SRO Clearance Ready' : '⚠ Action Required'}
+                <div
+                  className={`px-4 py-2 rounded-xl text-xs font-bold border ${
+                    auditResult.institutional_signoff_ready
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                      : 'bg-red-500/10 border-red-500/30 text-red-400'
+                  }`}
+                >
+                  {auditResult.institutional_signoff_ready
+                    ? '✓ SRO Clearance Ready'
+                    : '⚠ Action Required'}
                 </div>
               </div>
             </div>
 
-            {/* Quick metrics grid */}
+            {/* Quick Metrics Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
               <div className="bg-navy-950/60 p-4 rounded-xl border border-navy-800/80">
                 <span className="text-xs text-slate-400 block mb-1">Solicitation Pages</span>
@@ -271,7 +398,9 @@ export default function SubmissionPortal({ user, token, onSignOut }) {
               </div>
               <div className="bg-navy-950/60 p-4 rounded-xl border border-navy-800/80">
                 <span className="text-xs text-slate-400 block mb-1">Reconciled Budget</span>
-                <span className="text-xl font-bold text-emerald-400">${Number(auditResult.total_budget_extracted).toLocaleString()}</span>
+                <span className="text-xl font-bold text-emerald-400">
+                  ${Number(auditResult.total_budget_extracted).toLocaleString()}
+                </span>
               </div>
               <div className="bg-navy-950/60 p-4 rounded-xl border border-navy-800/80">
                 <span className="text-xs text-slate-400 block mb-1">Risk Flags Identified</span>
@@ -280,64 +409,254 @@ export default function SubmissionPortal({ user, token, onSignOut }) {
             </div>
           </div>
 
-          {/* Color-coded Risk Flags */}
-          <div className="bg-navy-900 border border-navy-800 rounded-2xl p-6">
-            <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-              <ShieldAlert className="w-5 h-5 text-brand-400" />
-              Identified Compliance Findings & Remediation Advisory
-            </h3>
-
-            {auditResult.findings.length === 0 ? (
-              <div className="p-6 text-center bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-300 text-sm">
-                No compliance infractions found! Proposal adheres to page, font, and section limits.
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {auditResult.findings.map((f) => {
-                  const isRed = f.severity === 'RED';
-                  const isYellow = f.severity === 'YELLOW';
-                  return (
-                    <div 
-                      key={f.id}
-                      className={`p-5 rounded-xl border ${
-                        isRed 
-                          ? 'bg-red-500/10 border-red-500/30' 
-                          : isYellow 
-                          ? 'bg-amber-500/10 border-amber-500/30' 
-                          : 'bg-emerald-500/10 border-emerald-500/30'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className={`text-[11px] font-extrabold uppercase px-2.5 py-0.5 rounded-full ${
-                          isRed ? 'bg-red-500/20 text-red-400' : 'bg-amber-500/20 text-amber-400'
-                        }`}>
-                          {isRed ? 'Fatal Rejection Risk' : 'Advisory Warning'} • {f.category}
-                        </span>
-                      </div>
-                      <p className="text-sm font-semibold text-white mb-2">{f.message}</p>
-                      <div className="text-xs text-slate-300 bg-navy-950/60 p-3 rounded-lg border border-navy-800 flex items-start gap-2">
-                        <span className="text-brand-400 font-bold shrink-0">Remediation:</span>
-                        <span>{f.remediation_advice}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            <div className="mt-6 flex justify-end">
+          {/* ===================================================================
+              WEEK 3 TAB NAVIGATION SWITCHER
+              =================================================================== */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-navy-800 pb-3">
+            <div className="flex items-center gap-2 bg-navy-950 p-1.5 rounded-xl border border-navy-800">
               <button
-                onClick={handleReset}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-navy-800 hover:bg-navy-700 text-slate-200 text-xs font-semibold rounded-xl border border-navy-700 transition-colors"
+                type="button"
+                onClick={() => setActiveTab('formatting')}
+                className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                  activeTab === 'formatting'
+                    ? 'bg-navy-800 text-white shadow-md'
+                    : 'text-slate-400 hover:text-white'
+                }`}
               >
-                <RotateCcw className="w-3.5 h-3.5" />
-                Submit Another Grant for Audit
+                <Sliders className="w-3.5 h-3.5" />
+                Layout & Formatting Rule Engine
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('gemini');
+                  if (!aiReview && !aiLoading) {
+                    handleRunAiAudit();
+                  }
+                }}
+                className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                  activeTab === 'gemini'
+                    ? 'bg-brand-500 text-slate-950 shadow-md shadow-brand-500/20'
+                    : 'text-brand-400 hover:text-brand-300'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Gemini AI Narrative Review
+                {aiReview && (
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
+                )}
               </button>
             </div>
+
+            {/* Quick Action Button */}
+            {activeTab === 'formatting' && !aiReview && (
+              <button
+                onClick={handleRunAiAudit}
+                disabled={aiLoading}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500 hover:bg-brand-400 text-slate-950 text-xs font-bold rounded-xl transition-all shadow-md shadow-brand-500/20 cursor-pointer disabled:opacity-50"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                {aiLoading ? 'Evaluating with Gemini...' : 'Run Gemini AI Narrative Review'}
+              </button>
+            )}
           </div>
+
+          {/* ===================================================================
+              TAB 1: FORMATTING & HEURISTIC RULE ENGINE (WEEK 2)
+              =================================================================== */}
+          {activeTab === 'formatting' && (
+            <div className="bg-navy-900 border border-navy-800 rounded-2xl p-6">
+              <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5 text-brand-400" />
+                Identified Formatting Findings & Remediation Advisory
+              </h3>
+
+              {auditResult.findings.length === 0 ? (
+                <div className="p-6 text-center bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-300 text-sm">
+                  No compliance infractions found! Proposal adheres to page, font, and section limits.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {auditResult.findings.map((f) => {
+                    const isRed = f.severity === 'RED';
+                    const isYellow = f.severity === 'YELLOW';
+                    return (
+                      <div
+                        key={f.id}
+                        className={`p-5 rounded-xl border ${
+                          isRed
+                            ? 'bg-red-500/10 border-red-500/30'
+                            : isYellow
+                            ? 'bg-amber-500/10 border-amber-500/30'
+                            : 'bg-emerald-500/10 border-emerald-500/30'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span
+                            className={`text-[11px] font-extrabold uppercase px-2.5 py-0.5 rounded-full ${
+                              isRed ? 'bg-red-500/20 text-red-400' : 'bg-amber-500/20 text-amber-400'
+                            }`}
+                          >
+                            {isRed ? 'Fatal Rejection Risk' : 'Advisory Warning'} • {f.category}
+                          </span>
+                        </div>
+                        <p className="text-sm font-semibold text-white mb-2">{f.message}</p>
+                        <div className="text-xs text-slate-300 bg-navy-950/60 p-3 rounded-lg border border-navy-800 flex items-start gap-2">
+                          <span className="text-brand-400 font-bold shrink-0">Remediation:</span>
+                          <span>{f.remediation_advice}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-navy-800">
+                <button
+                  onClick={handleRunAiAudit}
+                  disabled={aiLoading}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-500 hover:bg-brand-400 text-slate-950 text-xs font-bold rounded-xl transition-all shadow-md shadow-brand-500/20 cursor-pointer disabled:opacity-50"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Proceed to Gemini AI Narrative Review
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+
+                <button
+                  onClick={handleReset}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-navy-800 hover:bg-navy-700 text-slate-200 text-xs font-semibold rounded-xl border border-navy-700 transition-colors"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  Submit Another Grant for Audit
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ===================================================================
+              TAB 2: GEMINI AI NARRATIVE REVIEW & ADVISOR (WEEK 3)
+              =================================================================== */}
+          {activeTab === 'gemini' && (
+            <div>
+              {/* Step-by-Step Loading Indicator */}
+              {aiLoading && (
+                <div className="bg-navy-900 border border-navy-800 rounded-2xl p-8 text-center space-y-6">
+                  <div className="w-16 h-16 rounded-2xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-brand-400 mx-auto animate-bounce">
+                    <Sparkles className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white mb-2">
+                      Synthesizing Peer Review via Google Gemini 1.5 Flash
+                    </h3>
+                    <p className="text-xs text-slate-400 max-w-md mx-auto">
+                      Ingesting proposal sections, cross-referencing solicitation mandates, and generating side-by-side section rewrites.
+                    </p>
+                  </div>
+
+                  {/* Multi-step progress list */}
+                  <div className="max-w-md mx-auto space-y-2.5 text-left bg-navy-950/70 p-4 rounded-xl border border-navy-800">
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[10px]">
+                        ✓
+                      </span>
+                      <span className="text-slate-300">PyMuPDF Document Text Stream Extracted</span>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-xs">
+                      <span
+                        className={`w-4 h-4 rounded-full flex items-center justify-center font-bold text-[10px] ${
+                          aiStep >= 2
+                            ? 'bg-emerald-500/20 text-emerald-400'
+                            : 'bg-navy-800 text-slate-500 animate-pulse'
+                        }`}
+                      >
+                        {aiStep >= 2 ? '✓' : '2'}
+                      </span>
+                      <span className={aiStep >= 2 ? 'text-slate-300' : 'text-slate-500'}>
+                        Solicitation Alignment Rubric Cross-Referencing
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-xs">
+                      <span
+                        className={`w-4 h-4 rounded-full flex items-center justify-center font-bold text-[10px] ${
+                          aiStep >= 3
+                            ? 'bg-emerald-500/20 text-emerald-400'
+                            : 'bg-brand-500/20 text-brand-400 animate-pulse'
+                        }`}
+                      >
+                        {aiStep >= 3 ? '✓' : '3'}
+                      </span>
+                      <span className={aiStep >= 3 ? 'text-slate-300' : 'text-brand-300'}>
+                        Querying Google Gemini 1.5 Flash (JSON Schema Mode)...
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Error Callout */}
+              {aiError && (
+                <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-300 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <XCircle className="w-4 h-4 text-red-400 shrink-0" />
+                    <span>{aiError}</span>
+                  </div>
+                  <button
+                    onClick={handleRunAiAudit}
+                    className="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-200 border border-red-500/40 rounded-lg font-semibold cursor-pointer"
+                  >
+                    Retry Evaluation
+                  </button>
+                </div>
+              )}
+
+              {/* Render Core Gemini Advisor UI Component */}
+              {!aiLoading && aiReview && (
+                <div className="space-y-6">
+                  <GeminiAdvisor
+                    submissionId={auditResult.submission_id}
+                    token={token}
+                    aiReview={aiReview}
+                    onRefresh={handleRunAiAudit}
+                  />
+
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleReset}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-navy-800 hover:bg-navy-700 text-slate-200 text-xs font-semibold rounded-xl border border-navy-700 transition-colors"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      Submit Another Grant for Audit
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Trigger prompt if not yet loaded */}
+              {!aiLoading && !aiReview && !aiError && (
+                <div className="bg-navy-900 border border-navy-800 rounded-2xl p-10 text-center">
+                  <Sparkles className="w-12 h-12 text-brand-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-bold text-white mb-2">
+                    Ready to Generate Gemini AI Narrative Review
+                  </h3>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto mb-6">
+                    Analyze the proposal's Intellectual Merit, Broader Impacts, and Solicitation Alignment against federal review standards.
+                  </p>
+                  <button
+                    onClick={handleRunAiAudit}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-brand-500 hover:bg-brand-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-brand-500/20 transition-all cursor-pointer"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Start Gemini 1.5 Flash Evaluation
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
-
     </div>
   );
 }

@@ -4,7 +4,10 @@ import re
 from collections import Counter
 from decimal import Decimal, InvalidOperation
 from typing import Any, Dict, List, Optional, Tuple
-import fitz  # PyMuPDF
+try:
+    import pymupdf as fitz
+except ImportError:
+    import fitz  # PyMuPDF fallback
 import pdfplumber
 from schemas import (
     DocumentIngestionResult,
