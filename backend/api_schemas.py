@@ -198,7 +198,7 @@ class AIRewriteRequest(BaseModel):
     Payload for on-demand paragraph rewriting in the interactive playground.
     """
     section_name: str = Field(..., description="Section title, e.g. 'Project Summary'")
-    draft_text: str = Field(..., min_length=20, description="Raw text excerpt to polish")
+    draft_text: str = Field(..., min_length=1, description="Raw text excerpt to polish")
     target_guideline: Optional[str] = Field(
         "NSF 24-500",
         description="Target agency solicitation standard"

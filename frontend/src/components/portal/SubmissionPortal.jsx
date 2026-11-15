@@ -39,7 +39,7 @@ import {
   RefreshCw,
   Sliders,
 } from 'lucide-react';
-import { API_BASE } from '../../apiConfig';
+import { API_BASE, extractErrorMessage } from '../../apiConfig';
 import GeminiAdvisor from './GeminiAdvisor';
 
 export default function SubmissionPortal({ user, token, onSignOut }) {
@@ -101,7 +101,7 @@ export default function SubmissionPortal({ user, token, onSignOut }) {
         if (response.status === 401) {
           throw new Error('Session token expired or unverified. Please sign out and log in again.');
         }
-        throw new Error(data.detail || 'Audit processing failed on backend.');
+        throw new Error(extractErrorMessage(data, 'Audit processing failed on backend.'));
       }
 
       setAuditResult(data);
@@ -142,7 +142,7 @@ export default function SubmissionPortal({ user, token, onSignOut }) {
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.detail || 'Gemini AI evaluation failed.');
+        throw new Error(extractErrorMessage(data, 'Gemini AI evaluation failed.'));
       }
 
       setAiReview(data);

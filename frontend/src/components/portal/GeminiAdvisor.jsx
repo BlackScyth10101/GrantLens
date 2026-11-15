@@ -46,7 +46,7 @@ import {
   FileCheck2,
   HelpCircle,
 } from 'lucide-react';
-import { API_BASE } from '../../apiConfig';
+import { API_BASE, extractErrorMessage } from '../../apiConfig';
 
 export default function GeminiAdvisor({ submissionId, token, aiReview, onRefresh }) {
   // Clipboard copy state tracker for suggested rewrites
@@ -108,7 +108,7 @@ export default function GeminiAdvisor({ submissionId, token, aiReview, onRefresh
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.detail || 'Rewrite request failed.');
+        throw new Error(extractErrorMessage(data, 'Rewrite request failed.'));
       }
       setRewriteResult(data);
     } catch (err) {

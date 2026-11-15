@@ -12,7 +12,7 @@ import {
   Eye, 
   EyeOff 
 } from 'lucide-react';
-import { API_BASE } from '../../apiConfig';
+import { API_BASE, extractErrorMessage } from '../../apiConfig';
 
 export default function AuthPortal({ onAuthSuccess, onCancel }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -67,7 +67,7 @@ export default function AuthPortal({ onAuthSuccess, onCancel }) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.detail || 'Authentication request failed.');
+        throw new Error(extractErrorMessage(data, 'Authentication request failed.'));
       }
 
       if (isLogin) {
